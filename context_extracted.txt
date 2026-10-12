@@ -1,0 +1,2453 @@
+
+i want to make a project for re-inforcement learning for the topic : Adaptive Elevator Control Using Policy Evaluation and Policy Improvement. i have attached the syllabus for the same. suggest me a python based project that i shall make for this subject. i dont want it to be generic but something interesting and ootb and good for a long term project to actually make something and not just a demo for the sake of making a project 
+Yes. Given your syllabus, I would not make a simple “RL controls an elevator” simulation. That is too generic and will quickly become a visual demo rather than a substantial project.
+Your syllabus actually gives you a very good foundation for making something considerably more interesting: an elevator system that learns how to dispatch elevators under changing passenger demand, while explicitly implementing MDP → Value Functions → Bellman Equation → Policy Evaluation → Policy Improvement → Policy Iteration/Value Iteration. These are directly covered in Units 3 and 4. 
+My strongest recommendation
+Adaptive Multi-Elevator Dispatch System Using Policy Iteration
+Core idea
+Instead of asking:
+“Which floor should the elevator go to next?”
+make the problem:
+“Given the current traffic conditions in a building, which elevator should serve which passenger requests, in what order, while minimizing waiting time, travel time, energy consumption and unnecessary elevator movement?”
+That turns it into a genuine sequential decision-making problem.
+Imagine a 20-floor building with 3 elevators.
+At 8:50 AM:
+Floor 1
+ ↓ ↓ ↓ ↓ ↓
+People want to go to:
+10, 12, 15, 18, 20
+At 1:00 PM:
+Requests distributed randomly
+throughout the building
+At 5:30 PM:
+20,18,15,12,10
+ ↓  ↓  ↓  ↓  ↓
+Most people want to reach Floor 1
+A fixed elevator algorithm will behave the same way in all three situations.
+Your RL system should not.
+It should learn that different traffic conditions require different policies.
+
+What makes this project genuinely interesting
+I would build it around three levels of intelligence.
+Level 1 — Normal elevator controller
+Implement conventional strategies first:
+Nearest Elevator 
+First-Come-First-Serve 
+SCAN-like elevator scheduling 
+Fixed zone assignment 
+These become your baselines.
+Level 2 — Policy Iteration controller
+Represent the elevator system as an MDP.
+The state could contain:
+State =
+[
+    elevator positions,
+    elevator directions,
+    pending requests,
+    passenger waiting times,
+    current traffic pattern
+]
+Actions:
+Action =
+    assign request → Elevator 1
+    assign request → Elevator 2
+    assign request → Elevator 3
+or, in a more detailed formulation:
+Action =
+    select elevator
+    + select next destination
+Then define a reward such as:
+R=-αwaiting time-βtravel time-γenergy-δunserved requests
+The system learns a policy:
+πs=a
+meaning:
+Given the current building state s, what should the elevator system do?
+This directly connects to your syllabus's MDP, value functions, Bellman equation, optimal policy, policy evaluation and policy improvement topics. 
+
+But here's where I would make it much better
+Don't train it on one fixed traffic pattern.
+Create a Dynamic Building Environment.
+For example:
+Morning
+80% requests originate from Floor 1
+20% requests originate elsewhere
+Afternoon
+Requests uniformly distributed
+Evening
+70% requests terminate at Floor 1
+Event mode
+Suppose a conference is happening on Floor 15:
+Floor 1 → Floor 15
+Floor 2 → Floor 15
+Floor 3 → Floor 15
+...
+Emergency / elevator failure
+One elevator becomes unavailable.
+The policy must adapt.
+
+This gives you a much better research question
+Instead of:
+“Can reinforcement learning control an elevator?”
+your project asks:
+“Can policy evaluation and policy improvement dynamically adapt elevator dispatch policies to changing passenger traffic while minimizing waiting time, travel time and energy consumption?”
+That is a much more defensible project.
+
+Project architecture
+I'd structure the Python project like this:
+                 ┌──────────────────────┐
+                 │ Passenger Generator  │
+                 │                      │
+                 │ Morning              │
+                 │ Afternoon            │
+                 │ Evening              │
+                 │ Event                │
+                 └──────────┬───────────┘
+                            ↓
+                 ┌──────────────────────┐
+                 │ Building Environment │
+                 │                      │
+                 │ Floors               │
+                 │ Elevators             │
+                 │ Requests              │
+                 │ Passengers            │
+                 └──────────┬───────────┘
+                            ↓
+                 ┌──────────────────────┐
+                 │     MDP State        │
+                 │                      │
+                 │ s = elevator state   │
+                 │     + requests       │
+                 │     + traffic        │
+                 └──────────┬───────────┘
+                            ↓
+              ┌─────────────────────────────┐
+              │   RL Decision Engine        │
+              │                             │
+              │ Policy Evaluation           │
+              │        ↓                    │
+              │ Policy Improvement           │
+              │        ↓                    │
+              │ Policy Iteration             │
+              └──────────────┬──────────────┘
+                             ↓
+                  ┌─────────────────────┐
+                  │ Elevator Dispatcher │
+                  └──────────┬──────────┘
+                             ↓
+                  ┌─────────────────────┐
+                  │ Environment Update  │
+                  └──────────┬──────────┘
+                             │
+                             └──────→ next state
+
+The really interesting part: the state representation
+This is where the project becomes technically meaningful.
+Suppose you have 3 elevators and 10 floors.
+A state could look like:
+state = (
+    elevator_1_floor,
+    elevator_1_direction,
+
+    elevator_2_floor,
+    elevator_2_direction,
+
+    elevator_3_floor,
+    elevator_3_direction,
+
+    active_requests,
+    traffic_mode
+)
+For example:
+(
+  1, UP,
+  7, DOWN,
+  4, IDLE,
+  {3→8, 5→10, 2→9},
+  MORNING
+)
+The policy might learn:
+State:
+E1 = Floor 1, UP
+E2 = Floor 7, DOWN
+E3 = Floor 4, IDLE
+Requests = 3→8, 5→10, 2→9
+
+                 ↓
+
+Action:
+Assign 2→9 to E3
+Then the environment changes.
+The next state is generated.
+And the process continues.
+
+Policy Evaluation
+You can explicitly implement the algorithm taught in Unit 4.
+For a given policy:
+Vk+1s=a
+πa∣s
+s
+',r
+p
+s
+'r∣sar+γVk
+s
+'
+In your project:
+“How good is my current elevator strategy?”
+The algorithm evaluates the expected long-term cost/reward of every building state.
+
+Policy Improvement
+Then you ask:
+“Is there a better elevator assignment for this state?”
+Using:
+
+π
+'s=argmaxa
+s
+',r
+p
+s
+'r∣sar+γV
+s
+'
+If another action produces a better expected outcome, the policy changes.
+So you get:
+Initial policy
+      ↓
+Policy Evaluation
+      ↓
+Value function
+      ↓
+Policy Improvement
+      ↓
+Improved policy
+      ↓
+Policy Evaluation
+      ↓
+Policy Improvement
+      ↓
+...
+      ↓
+Stable policy
+This is exactly the theoretical concept your project title is supposed to demonstrate, rather than merely calling an RL library and claiming it is reinforcement learning.
+Your syllabus specifically lists Policy Evaluation, Policy Improvement, Policy Iteration, Value Iteration, Asynchronous Dynamic Programming and Grid World in Code under Unit 4. 
+
+The project should have an actual simulator
+Don't make the UI the main project.
+Make the simulation engine the main project and put a visualization on top of it.
+For example:
+┌──────────────────────────────────────────────────────┐
+│              ELEVATOR CONTROL CENTER                 │
+├──────────────────────────────────────────────────────┤
+│                                                      │
+│  Floor 20 ─────────────────────────────              │
+│                                                      │
+│  Floor 15 ──────── [E2 ↓]                            │
+│                                                      │
+│  Floor 10 ── [E1 ↑]                                  │
+│                                                      │
+│  Floor  5 ─────────────── [E3 ↑]                     │
+│                                                      │
+│  Floor  1 ─────────────────────────────              │
+│                                                      │
+├──────────────────────────────────────────────────────┤
+│ Traffic: MORNING PEAK                                │
+│ Waiting: 23                                          │
+│ Avg Wait: 11.2 sec                                   │
+│ Energy: 438 units                                    │
+│ Requests Served: 94                                  │
+├──────────────────────────────────────────────────────┤
+│ Policy: ADAPTIVE_POLICY_ITERATION                    │
+└──────────────────────────────────────────────────────┘
+You could implement the visualizer using something like Pygame, Tkinter, or a browser-based dashboard with Python as the backend.
+But the UI should only visualize what's happening.
+
+And I would add a "Policy Laboratory"
+This is what could make your project long-term rather than semester-demo.
+Give the user the ability to change the environment.
+For example:
+BUILDING CONFIGURATION
+
+Floors:             [20]
+Elevators:          [3]
+
+Traffic:
+○ Uniform
+○ Morning Peak
+○ Evening Peak
+○ Event
+○ Random
+
+Passenger arrival rate: [████████░░]
+
+Energy weighting:       [████░░░░░░]
+
+Waiting-time weighting: [████████░░]
+
+Failed elevator:
+○ None
+○ Elevator 1
+○ Elevator 2
+○ Elevator 3
+Then:
+RUN SIMULATION
+And compare:
+                    FCFS     NEAREST     RL
+------------------------------------------------
+Avg Waiting Time    24.8s      19.2s     12.7s
+Avg Travel Time     41.2s      38.4s     34.1s
+Energy              912       847       731
+Requests Served     92%       95%       98%
+Now you have an actual experimental platform.
+
+Even better: make the objective configurable
+This is one of the aspects I'd particularly recommend.
+An elevator doesn't have one universal definition of "best."
+A building manager might want:
+Fastest service
+R=-WaitingTime
+A green building might prioritize:
+Energy efficiency
+R=-WaitingTime-λEnergy
+A hospital might prioritize:
+Priority passengers
+R=-WaitingTime-λEmergencyDelay
+Your system could therefore allow:
+Optimization Objective
+
+[●] Passenger Experience
+[ ] Energy Efficiency
+[ ] Balanced
+[ ] Emergency Priority
+Then the optimal policy itself changes.
+That makes the project much more interesting academically.
+
+An even more OOTB extension: "Building Personality"
+You can create different building profiles.
+Corporate Tower
+Morning:
+Floor 1 → upper floors
+
+Evening:
+upper floors → Floor 1
+University
+Classes create periodic traffic spikes
+Hospital
+Emergency requests
++
+priority floors
++
+wheelchair/stretcher constraints
+Shopping Mall
+Highly distributed traffic
+The same RL framework is tested against all of them.
+Now your project isn't merely:
+Elevator simulator.
+It's:
+An adaptive decision-making framework for intelligent vertical transportation.
+
+Where your syllabus fits
+This is important because your professor will probably ask:
+"Which concepts from the course did you actually use?"
+You can map it very cleanly.
+
+Syllabus
+Project implementation
+RL elements
+Elevator = agent, building = environment
+Rewards
+Waiting/travel/energy penalties
+Returns
+Long-term passenger service cost
+MDP
+Elevator dispatch problem
+Markov property
+Current building state determines next decision
+Value functions
+Expected long-term elevator performance
+Bellman equation
+State-value update
+Optimal policy
+Best elevator dispatch strategy
+Policy Evaluation
+Evaluate current dispatch policy
+Policy Improvement
+Find better dispatch action
+Policy Iteration
+Repeated evaluation + improvement
+Value Iteration
+Alternative optimization method
+Exploration
+Try alternative dispatch decisions
+Monte Carlo
+Evaluate policies from complete simulations
+TD / Q-learning
+Future extension
+Function approximation
+Future extension for larger buildings
+The first several rows come directly from the syllabus' Units 3–5. 
+The syllabus also explicitly expects implementation of RL techniques and real-world applications, so a substantial elevator environment is much more aligned with the course than a purely toy example. 
+
+Don't stop at Policy Iteration
+This is where I'd turn it into a long-term project.
+Phase 1 — Simulator
+Build:
+Building 
+Floors 
+Elevators 
+Passenger requests 
+Elevator physics 
+Door/open-close time 
+Passenger boarding 
+Passenger exit 
+Waiting time 
+Travel time 
+No RL yet.
+
+Phase 2 — Classical algorithms
+Implement:
+FCFS
+Nearest Elevator
+Collective Control
+Zone-based Control
+Establish baseline performance.
+
+Phase 3 — MDP
+Formalize:
+S = states
+A = actions
+P = transition probabilities
+R = rewards
+γ = discount factor
+This directly addresses your Unit 3 content.
+
+Phase 4 — Policy Evaluation
+Implement it yourself.
+Don't just use a library.
+Measure:
+V(s)
+for each reachable state.
+
+Phase 5 — Policy Improvement
+Implement:
+π(s) → π'(s)
+and observe how the dispatch strategy evolves.
+
+Phase 6 — Policy Iteration
+Your primary algorithm:
+Initialize π
+
+while policy changes:
+
+    Evaluate π
+
+    Improve π
+Then compare convergence.
+
+Phase 7 — Value Iteration
+Implement:
+V(s) = max_a [R + γV(s')]
+Compare it with Policy Iteration.
+This is particularly useful because both are explicitly in your syllabus. 
+
+Phase 8 — Non-stationary traffic
+This is where the project becomes genuinely adaptive.
+Instead of:
+Passenger distribution = constant
+use:
+Morning
+   ↓
+Normal
+   ↓
+Lunch
+   ↓
+Event
+   ↓
+Evening
+and see whether the learned policy remains effective.
+This also gives you a natural connection to the syllabus's treatment of tracking a nonstationary problem in Unit 2. 
+
+Phase 9 — Elevator failures
+Randomly introduce:
+E2 unavailable
+The environment changes.
+The policy needs to adapt.
+You can investigate:
+How quickly does the controller recover from an elevator failure?
+That gives you another meaningful metric:
+Recovery Time
+
+Phase 10 — Compare algorithms experimentally
+This is where the project becomes something you can potentially write a paper around.
+Run thousands of simulated passenger episodes.
+Measure:
+Passenger metrics
+Average waiting time 
+95th percentile waiting time 
+Average journey time 
+Maximum waiting time 
+System metrics
+Elevator utilization 
+Number of stops 
+Total distance travelled 
+Energy consumption 
+Requests served 
+RL metrics
+Number of iterations to convergence 
+Policy changes per iteration 
+Value-function convergence 
+Reward per episode 
+Then produce graphs such as:
+Average Waiting Time
+│
+│ ████████████████  FCFS
+│ ████████████      Nearest
+│ ███████           Value Iteration
+│ █████             Policy Iteration
+│
+└────────────────────────────
+and:
+Policy Iteration Convergence
+
+Value
+│                  ─────────
+│              ───
+│          ───
+│       ──
+│    ──
+│ ──
+└──────────────────────── Iterations
+Now your project produces actual experimental evidence, rather than just a screen showing elevators moving.
+
+One particularly strong research extension
+Once the basic system works, introduce multi-objective adaptive control.
+Instead of one reward:
+R=-WaitingTime
+use:
+R=-w1W-w2T-w3E-w4F
+where:
+W= passenger waiting time 
+T= travel time 
+E= energy 
+F= fairness penalty 
+Then investigate:
+How does changing the reward function change the learned elevator policy?
+For example:
+High waiting-time weight
+       ↓
+Elevators aggressively serve requests
+
+High energy weight
+       ↓
+Elevators consolidate requests
+
+High fairness weight
+       ↓
+No passenger/request is neglected
+That is a much more interesting RL experiment than simply demonstrating that RL beats FCFS.
+
+Technology stack I'd use
+Keep the core Python.
+Python
+│
+├── NumPy
+├── Pandas
+├── Matplotlib
+├── Gymnasium-style custom environment
+│
+├── Custom MDP implementation
+│
+├── Policy Evaluation
+├── Policy Improvement
+├── Policy Iteration
+├── Value Iteration
+│
+└── Visualization
+      ├── Pygame / Tkinter
+      └── Matplotlib dashboard
+I would not start with TensorFlow/PyTorch.
+Your syllabus is heavily oriented toward tabular methods, MDPs and dynamic programming, and your project can become mathematically transparent if you implement those algorithms yourself. 
+Later, if the state space becomes too large, you can introduce function approximation, which is also present in Unit 5. 
+
+The long-term roadmap I'd recommend
+Version 1
+Single elevator + simple building
+↓
+Version 2
+Multiple elevators
+↓
+Version 3
+MDP formulation
+↓
+Version 4
+Policy Evaluation + Policy Improvement
+↓
+Version 5
+Policy Iteration vs Value Iteration
+↓
+Version 6
+Dynamic passenger demand
+↓
+Version 7
+Energy-aware reward
+↓
+Version 8
+Elevator failure / fault tolerance
+↓
+Version 9
+Multi-objective optimization
+↓
+Version 10
+Monte Carlo / TD / Q-learning comparison
+↓
+Version 11
+Large-state approximation
+↓
+Version 12
+Research-quality experimental study
+
+And I'd give the project a better name
+Instead of simply:
+Adaptive Elevator Control Using Policy Evaluation and Policy Improvement
+I'd use:
+ElevateRL: Adaptive Multi-Elevator Dispatch Using Policy Evaluation and Policy Improvement
+Subtitle:
+An MDP-based framework for adaptive elevator scheduling under dynamic passenger demand, energy constraints, and system failures.
+That sounds much more like an actual engineering/research project.
+
+Why I think this is the right project for you
+It checks several boxes simultaneously:
+Not generic:You're not making another grid-world/Tic-Tac-Toe RL demo.
+Actually RL:The elevator problem naturally becomes an MDP with sequential decisions and delayed rewards.
+Matches your syllabus:MDP → value functions → Bellman equation → policy evaluation → policy improvement → policy iteration → value iteration. 
+Python-friendly:The entire simulator and algorithms can be built from scratch.
+Expandable:You can keep increasing its sophistication without throwing away the original work.
+Research potential:You can formulate measurable questions around traffic adaptation, energy, fairness, convergence and robustness.
+Not dependent on a physical elevator:The simulator itself becomes your experimental environment.
+And importantly, your syllabus already lists “Reinforcement Learning for driving autonomous vehicle” and other real-world applications among the lab work, so applying the same RL/MDP principles to intelligent elevator dispatch is well within the intended practical scope. 
+If this were my project, I would make the core research question:
+Can policy iteration learn elevator dispatch policies that dynamically adapt to changing passenger traffic while simultaneously minimizing passenger waiting time, travel time, and elevator energy consumption?
+Then everything you build supports answering that question.
+If you want, the next step I would recommend is not coding yet. We should first design the exact MDP mathematically — state space, action space, transition model, reward function, discount factor and what one “time step” means. That is the part that will determine whether this becomes a genuinely strong RL project or just an elevator simulator with an RL label.
+Absolutely. Here is the final, corrected frontend-development prompt with the product name locked as ELEVATE and the full scope we finalized.
+You can give this directly to your frontend coding agent.
+Build the complete frontend for a production-quality Reinforcement Learning application called:
+
+                         ELEVATE
+
+Full academic project title:
+Adaptive Multi-Elevator Control Using Policy Evaluation and Policy Improvement
+
+ELEVATE is an intelligent multi-elevator reinforcement-learning platform that allows users to configure a building, generate dynamic passenger demand, run multiple RL algorithms in parallel, evaluate and compare policies, deploy a selected policy into an elevator simulation, and inspect a complete audit trail of the RL decisions.
+
+IMPORTANT:
+This is NOT a generic SaaS dashboard.
+This is NOT a typical college-project UI.
+It should feel like a polished AI research/control product.
+
+The visual direction should combine:
+- spatial UI
+- asymmetric bento grid
+- Nothing-inspired minimal industrial interface language
+- warm spring feminine pastel colors
+- soft gradients
+- precise typography
+- subtle technical visualizations
+- generous whitespace
+- restrained motion
+
+Do NOT copy Nothing's logo, branding, proprietary assets, exact typography, or exact interface.
+Only take inspiration from its philosophy of minimalism, geometry, technical labeling, negative space and hardware-like precision.
+
+
+============================================================
+1. BRAND
+============================================================
+
+Product name:
+
+ELEVATE
+
+Do NOT display:
+- ElevateRL
+- Elevate RL
+- ELEVATERL
+
+Use only:
+
+ELEVATE
+
+Possible small descriptor:
+
+ADAPTIVE ELEVATOR INTELLIGENCE
+
+Academic title may be displayed subtly in an information area:
+
+Adaptive Multi-Elevator Control Using Policy Evaluation and Policy Improvement
+
+
+============================================================
+2. DESIGN PHILOSOPHY
+============================================================
+
+The interface should feel like:
+
+A futuristic research laboratory designed for a spring morning.
+
+Visual keywords:
+
+warm
+feminine
+intelligent
+minimal
+spatial
+precise
+calm
+premium
+technical
+experimental
+lightweight
+
+Think:
+
+cream paper
+soft sunlight
+peach blossom
+dusty rose
+fresh mint
+lavender
+warm ivory
+soft spring atmosphere
+
+Do NOT make it look:
+
+- cyberpunk
+- neon
+- gaming
+- dark AI dashboard
+- overly corporate
+- candy-colored
+- childish
+- excessively glassmorphic
+
+
+============================================================
+3. COLOR SYSTEM
+============================================================
+
+Dominant background:
+
+Warm Ivory / Cream
+
+#FFF9F3
+
+Primary surface:
+
+#FFFDF9
+
+Warm charcoal text:
+
+#292727
+
+Muted text:
+
+#77706B
+
+Soft pastel palette:
+
+Blush:
+#F4C7C3
+
+Peach:
+#F7C9A9
+
+Apricot:
+#F5BFA3
+
+Butter:
+#F5E6A8
+
+Lavender:
+#DCCFEA
+
+Sage:
+#C9DDBB
+
+Mint:
+#C8E5D4
+
+Borders:
+
+rgba(41,39,39,0.10)
+
+Use pastel colors primarily as:
+- accents
+- spatial objects
+- subtle surfaces
+- gradients
+- status indicators
+
+Do NOT make every card a different pastel color.
+
+The overall interface should remain predominantly cream/ivory.
+
+Use gradients such as:
+
+cream → blush
+peach → butter
+lavender → blush
+sage → cream
+mint → ivory
+
+Gradients must be soft and atmospheric.
+
+No loud gradients.
+
+
+============================================================
+4. TYPOGRAPHY
+============================================================
+
+Use a modern geometric sans-serif.
+
+Preferred:
+- Inter
+- Geist
+- Manrope
+
+Use typography to create hierarchy.
+
+Large:
+editorial-style hero headings
+
+Medium:
+section titles
+
+Small:
+technical labels
+
+Use uppercase micro-labels for system terminology:
+
+STATE
+ACTION
+VALUE
+POLICY
+REWARD
+PENALTY
+AUDIT
+SIMULATION
+CONVERGENCE
+TRUST
+
+Use generous letter spacing on technical labels.
+
+Avoid excessive bold text.
+
+
+============================================================
+5. SPATIAL UI
+============================================================
+
+The interface should feel spatial rather than flat.
+
+Use:
+
+- layered surfaces
+- thin borders
+- subtle shadows
+- floating metadata
+- asymmetric layouts
+- offset labels
+- tiny system markers
+- dotted/grid patterns
+- soft gradient fields
+- miniature mathematical diagrams
+
+Use depth carefully.
+
+Avoid:
+- huge shadows
+- excessive blur
+- excessive glass
+- excessive rounded rectangles
+
+Corners should be moderately rounded, not bubble-like.
+
+The UI should feel engineered.
+
+
+============================================================
+6. BENTO GRID
+============================================================
+
+Use an asymmetric bento-grid layout.
+
+Do NOT make every component the same size.
+
+The primary dashboard should contain only approximately 3–4 major visual components.
+
+CRITICAL:
+
+Do not create 15–20 small dashboard cards.
+
+Use large spatial modules containing multiple pieces of related information.
+
+The main visual components are:
+
+1. Environment / Elevator Space
+2. RL Processing
+3. Policy Intelligence
+4. Decision Audit
+
+Reuse these visual primitives across other screens.
+
+
+============================================================
+7. APPLICATION STRUCTURE
+============================================================
+
+Create these primary routes/views:
+
+/
+
+Landing Page
+
+
+/laboratory
+
+Main RL laboratory/dashboard
+
+
+/experiment
+
+Experiment configuration
+
+
+/simulation
+
+Live elevator simulation
+
+
+/audit
+
+Audit and run history
+
+
+Potential optional route:
+
+/run/:runId
+
+Detailed experiment/run inspection
+
+
+============================================================
+8. GLOBAL NAVIGATION
+============================================================
+
+Minimal top navigation.
+
+LEFT:
+
+ELEVATE
+
+Under or beside it:
+
+ADAPTIVE ELEVATOR INTELLIGENCE
+
+
+CENTER / RIGHT:
+
+LABORATORY
+SIMULATION
+AUDIT
+
+
+RIGHTMOST:
+
+EXIT
+
+EXIT is mandatory.
+
+Every page except the landing page must have an EXIT control.
+
+EXIT behavior:
+
+- Return to the landing page
+- Preserve the current run in the run/audit system
+- Gracefully stop or pause active visualization
+- Do not destroy backend run data
+- Actually navigate to the landing route
+
+Do not use EXIT as a logout button.
+
+It means:
+"Exit the current ELEVATE workspace."
+
+
+============================================================
+9. LANDING PAGE
+============================================================
+
+Create a highly minimal, premium landing page.
+
+Do NOT make a conventional SaaS marketing page.
+
+No:
+- pricing
+- testimonials
+- blog
+- giant feature grid
+- team section
+- generic statistics
+- excessive marketing copy
+
+
+HERO
+
+Small technical label:
+
+REINFORCEMENT LEARNING / CONTROL SYSTEM
+
+
+Main heading:
+
+ELEVATE
+
+
+Large supporting statement:
+
+ADAPTIVE INTELLIGENCE
+FOR VERTICAL MOVEMENT.
+
+
+Supporting copy:
+
+A reinforcement-learning control system that evaluates,
+improves and deploys adaptive elevator policies under
+dynamic passenger demand.
+
+
+Primary CTA:
+
+ENTER LABORATORY →
+
+
+Secondary subtle CTA:
+
+VIEW SYSTEM
+
+
+============================================================
+10. LANDING PAGE SPATIAL VISUAL
+============================================================
+
+On the opposite side of the hero, create an abstract spatial representation of a building/elevator system.
+
+Do NOT create a realistic building illustration.
+
+Represent:
+
+- vertical floor lines
+- 3–4 elevator shafts
+- elevator position indicators
+- passenger request particles
+- directional arrows
+- floor numbers
+- tiny system labels
+
+Example:
+
+20 ─────────────────────
+19
+18                  ●
+17
+16          ↑
+15      ●
+14
+13
+12
+11                   ●
+10
+09
+08
+07       ●
+06
+05
+04
+03
+02
+01 ─────────────────────
+
+
+Floating system annotations:
+
+POLICY STATE
+OPTIMAL
+
+
+TRUST
+95.1
+
+
+ACTIVE REQUESTS
+24
+
+
+These should appear like technical annotations,
+not conventional dashboard cards.
+
+
+============================================================
+11. LANDING PAGE BOTTOM
+============================================================
+
+Only 3 compact bento elements:
+
+01
+POLICY
+
+Evaluate → Improve → Converge
+
+
+02
+SIMULATION
+
+Dynamic demand → Adaptive dispatch
+
+
+03
+AUDIT
+
+Every decision → Traceable
+
+
+Keep them minimal.
+
+
+============================================================
+12. MAIN LABORATORY DASHBOARD
+============================================================
+
+The main dashboard should feel like entering the ELEVATE control laboratory.
+
+Use the four major components below.
+
+
+------------------------------------------------------------
+COMPONENT 1 — ENVIRONMENT / ELEVATOR SPACE
+------------------------------------------------------------
+
+Large spatial bento module.
+
+Header:
+
+ENVIRONMENT
+
+
+Metadata:
+
+20 FLOORS
+4 ELEVATORS
+HIGH TRAFFIC
+
+
+Inside:
+
+Create a live vertical elevator visualization.
+
+Example:
+
+20 ─────────────────
+19
+18              ● E2
+17
+16
+15       ● E1
+14
+13
+12
+11
+10                    ● E4
+09
+08
+07
+06       ● E3
+05
+04
+03
+02
+01 ─────────────────
+
+
+Elevators must move smoothly during simulation.
+
+Passenger requests should appear as small particles/dots.
+
+Use pastel indicators.
+
+Show subtle direction indicators.
+
+The visualization should look mathematical and spatial,
+not like a game.
+
+
+------------------------------------------------------------
+COMPONENT 2 — RL PROCESSING
+------------------------------------------------------------
+
+Wide bento module.
+
+Header:
+
+RL PROCESSING
+
+
+Show parallel algorithm execution:
+
+POLICY ITERATION
+██████████  COMPLETE
+
+
+VALUE ITERATION
+██████████  COMPLETE
+
+
+MONTE CARLO
+██████████  COMPLETE
+
+
+Q-LEARNING
+███████░░░  RUNNING
+
+
+The algorithms should visually process in parallel.
+
+Do NOT make four huge cards.
+
+Use one coherent processing surface.
+
+Show:
+
+states evaluated
+iterations
+convergence
+current reward
+
+Update progress dynamically from backend events when available.
+
+
+------------------------------------------------------------
+COMPONENT 3 — POLICY INTELLIGENCE
+------------------------------------------------------------
+
+Compact bento module.
+
+Header:
+
+POLICY INTELLIGENCE
+
+
+Selected policy:
+
+POLICY ITERATION
+
+
+Show:
+
+REWARD
++4,953.55
+
+
+TRUST
+95.1
+
+
+CONFIDENCE
+HIGH
+
+
+CONVERGENCE
+17 ITERATIONS
+
+
+Also show a concise reason:
+
+BEST BALANCED PERFORMANCE
+
+
+Primary action:
+
+DEPLOY TO SIMULATION →
+
+
+When clicked:
+
+The selected policy artifact must become the active policy
+for the elevator simulator.
+
+Do not regenerate or retrain the policy on the frontend.
+
+
+------------------------------------------------------------
+COMPONENT 4 — DECISION AUDIT
+------------------------------------------------------------
+
+Wide bento module.
+
+Header:
+
+DECISION AUDIT
+
+
+Display the latest decision as a spatial timeline:
+
+15:43:21
+
+STATE
+
+E1: F04
+E2: F12
+E3: F07
+E4: F01
+
+↓
+
+ACTION
+
+ASSIGN E2 → F14
+
+↓
+
+REWARD
+
++12.42
+
+↓
+
+PENALTY
+
+-3.18
+
+↓
+
+VALUE
+
+V(s) = 45.87
+
+↓
+
+NEXT STATE
+
+E2 → F14
+
+
+Button:
+
+OPEN FULL AUDIT →
+
+
+The dashboard should show only the latest decision chain.
+
+Full details belong in the Audit page.
+
+
+============================================================
+13. EXPERIMENT CONFIGURATION
+============================================================
+
+Create /experiment.
+
+This should be a beautiful spatial configuration interface,
+not a traditional giant form.
+
+Allow the user to configure:
+
+BUILDING
+
+Floors
+Elevators
+Capacity
+Travel time
+Door time
+
+
+PASSENGER MODEL
+
+Arrival rate
+Group size
+Origin/destination distribution
+
+
+TRAFFIC
+
+Uniform
+Morning Peak
+Evening Peak
+Lunch
+Event
+Custom
+
+
+DYNAMIC CONDITIONS
+
+Traffic increase
+Traffic decrease
+High-demand floor
+Elevator failure
+
+
+RL ALGORITHMS
+
+Policy Iteration
+Value Iteration
+Monte Carlo
+TD
+Q-Learning
+
+
+OBJECTIVE WEIGHTS
+
+Waiting Time
+Travel Time
+Energy
+Fairness
+Unserved Requests
+
+
+RL PARAMETERS
+
+Gamma
+Convergence threshold
+Maximum iterations
+Exploration strategy
+Episodes
+Random seed
+
+
+EXPLORATION
+
+Greedy
+ε-Greedy
+UCB
+Optimistic Initial Values
+
+
+PRIMARY ACTION:
+
+RUN EXPERIMENT →
+
+
+============================================================
+14. RL PROCESSING FLOW
+============================================================
+
+When the user clicks RUN EXPERIMENT:
+
+Do not simply show a generic spinner.
+
+Transition into an active RL processing experience.
+
+Show:
+
+SCENARIO GENERATED
+
+↓
+
+MDP CONSTRUCTED
+
+↓
+
+POLICY EVALUATION
+
+↓
+
+POLICY IMPROVEMENT
+
+↓
+
+POLICY ITERATION
+
+↓
+
+VALUE ITERATION
+
+↓
+
+MONTE CARLO
+
+↓
+
+TD / Q-LEARNING
+
+↓
+
+POLICY COMPARISON
+
+↓
+
+POLICY SELECTION
+
+
+Algorithms that finish should immediately show their results.
+
+Do not make the user wait for the slowest algorithm
+if completed results are already available.
+
+Processing states:
+
+QUEUED
+RUNNING
+COMPLETE
+FAILED
+CONVERGED
+
+
+============================================================
+15. POLICY COMPARISON
+============================================================
+
+After processing, show a compact comparison.
+
+Example:
+
+                 REWARD     WAIT     ENERGY     TRUST
+
+POLICY ITER.      4953      11.2s     714       95.1
+VALUE ITER.       4812      11.8s     728       92.7
+MONTE CARLO       4621      12.4s     751       90.4
+Q-LEARNING        4971      10.9s     702       88.2
+
+
+Highlight the selected policy subtly using a pastel surface.
+
+Do NOT use:
+- giant green checkmarks
+- "WINNER!!!"
+- neon colors
+
+Instead:
+
+RECOMMENDED POLICY
+
+POLICY ITERATION
+
+Reason:
+
+Highest balanced performance with strong convergence
+and stability.
+
+
+============================================================
+16. TRUST SCORE
+============================================================
+
+Trust Score is a PROJECT-LEVEL AUDIT METRIC.
+
+Do not present it as a standard RL mathematical quantity.
+
+Show its components:
+
+CONVERGENCE
+98%
+
+POLICY STABILITY
+96%
+
+PERFORMANCE CONSISTENCY
+93%
+
+ROBUSTNESS
+91%
+
+FAULT RECOVERY
+95%
+
+
+OVERALL TRUST
+
+94.6
+
+
+Allow the user to expand the trust score to see
+how it was calculated.
+
+
+============================================================
+17. DECISION CONFIDENCE
+============================================================
+
+Distinguish Trust Score from Decision Confidence.
+
+Example:
+
+Policy A:
+843.2
+
+
+Policy B:
+841.9
+
+
+Difference:
+1.3
+
+
+DECISION CONFIDENCE
+
+LOW
+
+
+If the difference is substantial:
+
+DECISION CONFIDENCE
+
+HIGH
+
+
+Make this explainable.
+
+Do not create a mysterious AI confidence percentage.
+
+
+============================================================
+18. SIMULATION PAGE
+============================================================
+
+After deploying a policy, open /simulation.
+
+This is the live elevator environment.
+
+Do NOT make it look like a videogame.
+
+Large central spatial elevator visualization.
+
+Show:
+
+Floors
+Elevators
+Passengers
+Requests
+Movement
+Direction
+Doors
+Failures
+
+
+Right-side compact system panel:
+
+ACTIVE POLICY
+
+Policy Iteration
+
+
+REWARD
+
+...
+
+
+AVG WAIT
+
+... sec
+
+
+ENERGY
+
+... units
+
+
+SERVED
+
+...%
+
+
+TRUST
+
+...%
+
+
+Bottom:
+
+AUDIT EVENT STREAM
+
+
+Example:
+
+00:01
+Passenger request F03 → F14
+
+
+00:02
+E2 assigned
+
+
+00:04
+E2 moving
+
+
+00:08
+Passenger boarded
+
+
+00:17
+Passenger delivered
+
+
+The simulation must use the actual selected policy artifact.
+
+
+============================================================
+19. AUDIT PAGE
+============================================================
+
+Create /audit.
+
+This is a serious engineering investigation interface.
+
+Primary run identifier:
+
+ELV-2026-0914-00127
+
+
+Show:
+
+ENVIRONMENT
+
+Floors
+Elevators
+Capacity
+Traffic
+Passenger configuration
+Failure conditions
+
+
+RL
+
+Algorithm
+Gamma
+Exploration
+Iterations
+Convergence
+
+
+DECISION
+
+State
+Available actions
+Selected action
+Value
+Reward
+Penalty
+Next state
+
+
+OUTCOME
+
+Waiting time
+Travel time
+Energy
+Fairness
+Requests served
+Prediction error
+
+
+Create a visual decision timeline:
+
+STATE
+↓
+ACTION
+↓
+REWARD
+↓
+VALUE
+↓
+NEXT STATE
+↓
+POLICY UPDATE
+
+
+Allow:
+
+VIEW RUN
+REPLAY
+COMPARE
+
+
+============================================================
+20. THREE TYPES OF LOGGING
+============================================================
+
+The frontend must visually distinguish:
+
+RUN LOG
+
+High-level experiment information.
+
+
+DECISION AUDIT LOG
+
+State/action/reward/value decisions.
+
+
+SIMULATION LOG
+
+What the elevator actually did.
+
+
+The system should allow correlation:
+
+RL DECISION
+↓
+ELEVATOR ACTION
+↓
+SIMULATION EVENT
+↓
+ACTUAL OUTCOME
+
+
+============================================================
+21. PREDICTED VS ACTUAL
+============================================================
+
+Provide a compact analytical section.
+
+Example:
+
+RL EXPECTED WAIT
+
+10.4 sec
+
+
+SIMULATION ACTUAL
+
+11.2 sec
+
+
+PREDICTION ERROR
+
+7.69%
+
+
+Across multiple runs show:
+
+Mean error
+Standard deviation
+Worst-case error
+
+
+This should help demonstrate model reliability.
+
+
+============================================================
+22. WHAT-IF MODE
+============================================================
+
+Allow users to modify the current scenario.
+
+Examples:
+
+Elevator 2 fails
+
+Traffic increases 30%
+
+Floor 15 becomes high demand
+
+Energy cost increases 50%
+
+
+Then compare:
+
+BEFORE
+vs
+AFTER
+
+
+Metrics:
+
+Waiting
+Travel
+Energy
+Requests served
+Reward
+Trust
+
+
+The UI should clearly show:
+
+ENVIRONMENT CHANGED
+→
+POLICY RE-EVALUATED
+→
+NEW POLICY
+→
+NEW SIMULATION
+
+
+============================================================
+23. EXPERIMENT MODE
+============================================================
+
+Create a way to run systematic experiments.
+
+Example:
+
+Experiment:
+
+COMPARE ALGORITHMS UNDER INCREASING DEMAND
+
+
+Traffic:
+
+10%
+20%
+30%
+...
+100%
+
+
+Algorithms:
+
+FCFS
+Nearest Elevator
+Policy Iteration
+Value Iteration
+Monte Carlo
+Q-Learning
+
+
+Runs per condition:
+
+100
+
+
+Metrics:
+
+Waiting
+Travel
+Energy
+Reward
+Fairness
+Trust
+
+
+Generate visual results:
+
+- comparison charts
+- convergence curves
+- performance curves
+- summary tables
+
+
+============================================================
+24. BASELINE ALGORITHMS
+============================================================
+
+Support conventional baselines:
+
+FCFS
+
+Nearest Elevator
+
+Zone-Based Dispatch
+
+
+These are not RL algorithms.
+
+Clearly label them as:
+
+BASELINE
+
+
+Use them to compare against:
+
+Policy Iteration
+Value Iteration
+Monte Carlo
+TD
+Q-Learning
+
+
+============================================================
+25. REPRODUCIBILITY
+============================================================
+
+Every experiment should visibly record:
+
+Run ID
+Random Seed
+Environment Configuration
+Algorithm Configuration
+Software/algorithm version
+
+
+Provide:
+
+REPLAY RUN →
+
+
+A replay should reconstruct the same experiment
+when the same deterministic configuration is used.
+
+
+============================================================
+26. DATA MODEL
+============================================================
+
+Do NOT scatter fake numbers throughout components.
+
+Create centralized typed interfaces/models for:
+
+EnvironmentState
+
+ElevatorState
+
+PassengerRequest
+
+TrafficState
+
+MDPState
+
+Action
+
+Transition
+
+RewardBreakdown
+
+RLRun
+
+RLAlgorithmResult
+
+Policy
+
+PolicyArtifact
+
+SimulationState
+
+SimulationEvent
+
+AuditEvent
+
+TrustScore
+
+DecisionConfidence
+
+ExperimentConfig
+
+ExperimentResult
+
+
+The frontend should consume these structures.
+
+The Python backend will eventually provide real values.
+
+
+============================================================
+27. BACKEND SEPARATION
+============================================================
+
+CRITICAL:
+
+Do NOT implement reinforcement-learning calculations inside
+frontend components.
+
+Frontend responsibilities:
+
+- configuration
+- visualization
+- interaction
+- progress display
+- policy selection
+- simulation rendering
+- audit visualization
+
+Backend responsibilities:
+
+- MDP construction
+- Policy Evaluation
+- Policy Improvement
+- Policy Iteration
+- Value Iteration
+- Monte Carlo
+- TD
+- Q-Learning
+- reward calculation
+- penalty calculation
+- trust calculation
+- simulation
+- audit generation
+- experiment execution
+
+
+Create a clean service/API abstraction so the mock data
+layer can later be replaced by the real Python backend
+without redesigning the frontend.
+
+
+============================================================
+28. PERFORMANCE
+============================================================
+
+The application must feel FAST.
+
+Do not block the entire interface while RL algorithms process.
+
+Use:
+
+- asynchronous processing states
+- streaming progress when backend supports it
+- incremental result updates
+- independent algorithm statuses
+- optimistic navigation where appropriate
+- efficient rendering for elevator movement
+- throttled visual updates where necessary
+
+The UI should remain responsive even when simulations
+are processing large numbers of states.
+
+
+============================================================
+29. ANIMATION
+============================================================
+
+Animations should be subtle and purposeful.
+
+Use:
+
+- smooth elevator movement
+- moving passenger particles
+- gentle gradient movement
+- number interpolation
+- policy processing transitions
+- progress transitions
+- state transitions
+- page transitions
+
+Avoid:
+
+- bouncing
+- excessive parallax
+- flashy effects
+- spinning everywhere
+- excessive 3D
+- gaming effects
+
+The system should feel calm and technically sophisticated.
+
+
+============================================================
+30. COMPONENT LIMIT
+============================================================
+
+CRITICAL DESIGN RULE:
+
+Visible UI should use approximately 3–4 major components per page.
+
+Core visual primitives:
+
+1. Environment Space
+2. RL Processing
+3. Policy Intelligence
+4. Audit
+
+Other screens should reuse these primitives.
+
+Do not create unnecessary cards simply because there is empty space.
+
+NEGATIVE SPACE IS PART OF THE DESIGN.
+
+
+============================================================
+31. RESPONSIVENESS
+============================================================
+
+Desktop-first.
+
+Support:
+
+- large desktop
+- standard laptop
+- tablet
+
+On smaller screens:
+
+- stack bento modules intelligently
+- preserve the elevator spatial visualization
+- maintain navigation clarity
+- avoid horizontal overflow
+
+
+============================================================
+32. MICRO-INTERACTIONS
+============================================================
+
+Buttons should feel precise.
+
+Examples:
+
+ENTER LABORATORY →
+
+RUN EXPERIMENT →
+
+DEPLOY TO SIMULATION →
+
+OPEN FULL AUDIT →
+
+REPLAY RUN →
+
+EXIT
+
+
+Use subtle hover movement.
+
+Use soft pastel background transitions.
+
+Do not use generic bootstrap-like buttons.
+
+
+============================================================
+33. SYSTEM TERMINOLOGY
+============================================================
+
+Use technically accurate terminology.
+
+Examples:
+
+MDP
+
+STATE
+
+ACTION
+
+TRANSITION
+
+REWARD
+
+PENALTY
+
+RETURN
+
+VALUE FUNCTION
+
+POLICY
+
+POLICY EVALUATION
+
+POLICY IMPROVEMENT
+
+POLICY ITERATION
+
+VALUE ITERATION
+
+MONTE CARLO
+
+TD
+
+Q-LEARNING
+
+CONVERGENCE
+
+EXPLORATION
+
+EXPLOITATION
+
+TRUST SCORE
+
+DECISION CONFIDENCE
+
+AUDIT
+
+
+Do not replace technical terminology with vague marketing terms
+such as:
+
+"AI Magic"
+
+"Smart Engine"
+
+"Neural Brain"
+
+etc.
+
+
+============================================================
+34. FINAL VISUAL HIERARCHY
+============================================================
+
+The overall application should visually follow:
+
+80%:
+cream / ivory / whitespace
+
+
+15%:
+soft pastel surfaces / gradients
+
+
+5%:
+accent colors / indicators
+
+
+Primary visual emphasis:
+
+ELEVATOR SPATIAL SYSTEM
+
+
+Secondary:
+
+RL PROCESSING
+
+
+Third:
+
+POLICY INTELLIGENCE
+
+
+Fourth:
+
+AUDIT
+
+
+The interface should feel light despite being technically complex.
+
+
+============================================================
+35. FINAL USER JOURNEY
+============================================================
+
+The intended journey is:
+
+LANDING
+
+ELEVATE
+Adaptive intelligence for vertical movement.
+
+        ↓
+
+ENTER LABORATORY
+
+        ↓
+
+CONFIGURE ENVIRONMENT
+
+        ↓
+
+RUN EXPERIMENT
+
+        ↓
+
+MDP GENERATED
+
+        ↓
+
+PARALLEL RL PROCESSING
+
+        ↓
+
+POLICY EVALUATION
+
+        ↓
+
+POLICY IMPROVEMENT
+
+        ↓
+
+POLICY COMPARISON
+
+        ↓
+
+TRUST / CONFIDENCE ANALYSIS
+
+        ↓
+
+SELECT POLICY
+
+        ↓
+
+DEPLOY TO SIMULATION
+
+        ↓
+
+LIVE ELEVATOR SIMULATION
+
+        ↓
+
+DECISION AUDIT
+
+        ↓
+
+PERFORMANCE ANALYSIS
+
+        ↓
+
+REPLAY / WHAT-IF / NEW EXPERIMENT
+
+        ↓
+
+EXIT
+
+        ↓
+
+LANDING
+
+
+============================================================
+36. FINAL PRODUCT FEEL
+============================================================
+
+The final product should feel like:
+
+"A spatial research laboratory for adaptive elevator
+intelligence."
+
+It should NOT feel like:
+
+"An undergraduate elevator simulation."
+
+
+Prioritize in this exact order:
+
+1. Technical credibility
+2. Spatial composition
+3. Minimalism
+4. Information hierarchy
+5. Warm spring pastel aesthetic
+6. RL transparency
+7. Auditability
+8. Fast interaction
+9. Smooth animation
+10. Visual polish
+
+
+Do not add unrelated features.
+
+Do not add excessive dashboard widgets.
+
+Do not add generic marketing sections.
+
+Do not introduce dark mode unless specifically requested.
+
+Do not make the interface neon.
+
+Do not hide technical RL information behind decorative UI.
+
+The final frontend must be ready to connect to a Python RL backend and should visually communicate the complete pipeline:
+
+CONFIGURE
+→
+MODEL
+→
+EVALUATE
+→
+IMPROVE
+→
+COMPARE
+→
+SELECT
+→
+DEPLOY
+→
+SIMULATE
+→
+AUDIT
+→
+LEARN
+One important implementation instruction: have the frontend agent build the visual architecture and service interfaces first, with realistic mock event streams, rather than hardcoding the final RL numbers. That way, when we build the Python backend, the actual Policy Evaluation → Policy Improvement → policy artifact → simulation → audit log pipeline can plug into the frontend without needing to redesign it.

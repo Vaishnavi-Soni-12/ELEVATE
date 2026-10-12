@@ -1,0 +1,33 @@
+# Node dependencies
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+
+# Python cache & virtual environments
+__pycache__/
+backend/**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# Environment and run logs
+.run-logs/
+*.log
+
+# Operating system artifacts
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary helper scripts and Office lock files
+capture_screens.py
+export_pdf.ps1
+docx_helpers.py
+build_elevate_report.py
+generate_report_charts.py
+~$*
